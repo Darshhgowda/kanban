@@ -1,0 +1,57 @@
+version: '3'
+services:
+
+  kanban-postgres:
+    image: "postgres:9.6-alpine"
+    container_name: kanban-postgres
+    volumes:
+      - kanban-data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    deploy:
+      replicas: 4
+    environment:
+      - POSTGRES_DB=kanban
+      - POSTGRES_USER=kanban
+      - POSTGRES_PASSWORD=kanban
+    networks:
+      - my-network
+   
+  kanban-app:
+    image: chandanshankar/kanban-backend:${TAG}
+    build:
+      context: ./kanban-app
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - DB_SERVER=kanban-postgres
+      - POSTGRES_DB=kanban
+      - POSTGRES_USER=kanban
+      - POSTGRES_PASSWORD=kanban
+    ports:
+      - 8080:8080
+    links:
+      - kanban-postgres
+    deploy:
+      replicas: 2
+    networks:
+      - my-network
+    
+  kanban-ui:
+    image: chandanshankar/kanban-frontend:${TAG}
+    container_name: kanban_frontrend
+    build: ./kanban-ui
+    ports:
+      - 4200:80
+    links:
+      - kanban-app
+    deploy:
+      replicas: 2
+    networks:
+      - my-network
+   
+volumes:
+  kanban-data:
+networks:
+  my-network:
+    driver: overlay
